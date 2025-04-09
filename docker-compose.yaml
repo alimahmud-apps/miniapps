@@ -1,0 +1,11 @@
+version: "3"
+services:
+  postgres-ewallet:
+    image: postgres:12-alpine
+    ports:
+      - 127.0.0.1:5432:5432
+    volumes:
+      - ../volumes/postgresql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: pgwallet
+      POSTGRES_PASSWORD: password
