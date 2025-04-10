@@ -1,17 +1,17 @@
 package config
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 // DB is a global database connection pool.
-var DB *sql.DB
+var DB *sqlx.DB
 
 // InitDB initializes the database connection.
 func InitDB() {
@@ -22,10 +22,10 @@ func InitDB() {
 		getEnv("DB_PORT", "5432"),
 		getEnv("DB_USER", "pgwallet"),
 		getEnv("DB_PASSWORD", "password"),
-		getEnv("DB_NAME", "ewallet"),
+		getEnv("DB_NAME", "pgwallet"),
 	)
 
-	DB, err = sql.Open("postgres", connStr)
+	DB, err = sqlx.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("Could not connect to the database: %v", err)
 	}

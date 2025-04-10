@@ -1,17 +1,20 @@
-## Cara running test
+## running
 
-1. didalam folder `test` running command :
-    - `go test --race -v -timeout 30m`
+1. run the docker compose :
+    - `docker-compose up -d`
 
-## Jawaban Pertanyaan Tambahan
+## List Endpoints
 
-1. cara memastikan atomic yaitu :
-    - implementasi `BEGIN TRANSACTION` dan `commit` ,dan jika mengalami error maka menggunakan `ROLLBACK`
+1. POST `localhost:8080/api/users` :
+    - create new user
 
-2. Racing condition terjadi karena ada bebera request secara masive yang berjalan bersamaan, dan cara mengatasi nya yaitu dengan
-    - implementasi locking dalam case ini didalam `service` menggunakan `mutex` agar mencegah thread lain mengakses dan mengubah data yang sama
+2. GET `localhost:8080/api/users/<userid>`
+    - Retreive user by id
 
-3. Langkah-langkah rollback yaitu:
-    - menggunakan `BEGIN TRANSACTION` untuk memulai transaksi.
-    - jika ada error maka pastikan akan melakukan `ROLLBACK` untuk membatalkan semua perubahan yang sudah dilakukan.
-    - jika success makan melakukan `COMMIT` untuk menyimpan semua perubahan secara permanen.
+3. POST `localhost:8080/api/transactions/credit`:
+    - Add amount balance for user
+
+4. POST `localhost:8080/api/transactions/devit`:
+    - Deducted amount balance for user
+
+#### detail payload with sample request in postman collection

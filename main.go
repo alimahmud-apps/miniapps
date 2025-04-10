@@ -20,6 +20,7 @@ func main() {
 
 	// Create instances of controllers
 	transactionController := controllers.NewTransactionController(ewalletService)
+	usersController := controllers.NewUsersController(ewalletService)
 
 	// Setup Echo
 	e := echo.New()
@@ -28,6 +29,8 @@ func main() {
 	// Routes
 	e.POST("/api/transactions/credit", transactionController.Credit)
 	e.POST("/api/transactions/debit", transactionController.Debit)
+	e.POST("/api/users", usersController.Create)
+	e.GET("/api/users/:id", usersController.Retrieve)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))

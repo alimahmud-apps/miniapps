@@ -2,7 +2,7 @@ package tests
 
 import (
 	"miniapps/config"
-	"miniapps/logs"
+	logs "miniapps/helper"
 	"miniapps/repositories"
 	"miniapps/services"
 	"sync"

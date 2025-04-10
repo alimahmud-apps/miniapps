@@ -11,6 +11,8 @@ import (
 type EWalletService interface {
 	Credit(userID int, amount float64) (int64, float64, error)
 	Debit(userID int, amount float64) (int64, float64, error)
+	UserCreate(uername string) (int, error)
+	GetUsersByID(id int) (models.User, error)
 }
 
 type eWalletService struct {
@@ -34,12 +36,17 @@ func (s *eWalletService) Credit(userID int, amount float64) (int64, float64, err
 		return 0, 0, err
 	}
 
+	balance, err := s.userRepo.GetBalance(userID)
+	if err != nil {
+		return 0, 0, err
+	}
+
 	// Update balance
 	err = s.userRepo.UpdateBalance(userID, amount, tx)
 	if err != nil {
-		err = s.userRepo.RollbackTransaction(tx)
-		if err != nil {
-			return 0, 0, err
+		errRb := s.userRepo.RollbackTransaction(tx)
+		if errRb != nil {
+			return 0, 0, errRb
 		}
 		return 0, 0, err
 	}
@@ -53,9 +60,9 @@ func (s *eWalletService) Credit(userID int, amount float64) (int64, float64, err
 	}
 	err = s.transactionRepo.CreateTransaction(transaction, tx)
 	if err != nil {
-		err = s.userRepo.RollbackTransaction(tx)
-		if err != nil {
-			return 0, 0, err
+		errRb := s.userRepo.RollbackTransaction(tx)
+		if errRb != nil {
+			return 0, 0, errRb
 		}
 		return 0, 0, err
 	}
@@ -63,11 +70,7 @@ func (s *eWalletService) Credit(userID int, amount float64) (int64, float64, err
 	if err != nil {
 		return 0, 0, err
 	}
-
-	balance, err := s.userRepo.GetBalance(userID)
-	if err != nil {
-		return 0, 0, err
-	}
+	balance = balance + amount
 	return transaction.ID, balance, err
 }
 
@@ -92,9 +95,9 @@ func (s *eWalletService) Debit(userID int, amount float64) (int64, float64, erro
 	// Update balance
 	err = s.userRepo.UpdateBalance(userID, -amount, tx)
 	if err != nil {
-		err = s.userRepo.RollbackTransaction(tx)
-		if err != nil {
-			return 0, 0, err
+		errRb := s.userRepo.RollbackTransaction(tx)
+		if errRb != nil {
+			return 0, 0, errRb
 		}
 		return 0, 0, err
 	}
@@ -109,9 +112,9 @@ func (s *eWalletService) Debit(userID int, amount float64) (int64, float64, erro
 
 	err = s.transactionRepo.CreateTransaction(transaction, tx)
 	if err != nil {
-		err = s.userRepo.RollbackTransaction(tx)
-		if err != nil {
-			return 0, 0, err
+		errRb := s.userRepo.RollbackTransaction(tx)
+		if errRb != nil {
+			return 0, 0, errRb
 		}
 		return 0, 0, err
 	}
@@ -123,4 +126,34 @@ func (s *eWalletService) Debit(userID int, amount float64) (int64, float64, erro
 
 	balance = balance - amount
 	return transaction.ID, balance, err
+}
+
+func (s *eWalletService) UserCreate(username string) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	tx, err := s.userRepo.BeginTransaction()
+	if err != nil {
+		return 0, err
+	}
+	userId, err := s.userRepo.CreateUser(username, tx)
+	if err != nil {
+		errRb := s.userRepo.RollbackTransaction(tx)
+		if errRb != nil {
+			return 0, errRb
+		}
+		return 0, err
+	}
+	err = s.userRepo.CommitTransaction(tx)
+	if err != nil {
+		return 0, err
+	}
+	return userId, nil
+}
+
+func (s *eWalletService) GetUsersByID(id int) (models.User, error) {
+	user, err := s.userRepo.GetUsersByID(id)
+	if err != nil {
+		return models.User{}, err
+	}
+	return user, nil
 }

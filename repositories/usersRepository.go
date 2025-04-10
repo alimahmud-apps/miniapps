@@ -2,13 +2,22 @@ package repositories
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"log"
 	"miniapps/config"
+	"miniapps/models"
+	"strings"
+
+	"github.com/lib/pq"
 )
 
 type UserRepository interface {
 	UpdateBalance(userID int, amount float64, tx *sql.Tx) error
 	GetBalance(userID int) (float64, error)
+	GetUsersByID(userID int) (models.User, error)
+	CreateUser(username string, tx *sql.Tx) (int, error)
+
 	BeginTransaction() (*sql.Tx, error)
 	CommitTransaction(*sql.Tx) error
 	RollbackTransaction(*sql.Tx) error
@@ -46,9 +55,47 @@ func (r *userRepo) GetBalance(userID int) (float64, error) {
 	balance := float64(0)
 	err := row.Scan(&balance)
 	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return 0, errors.New("user not found")
+		}
 		log.Println("Failed to get balance:", err)
 		return 0, err
 	}
 
 	return balance, nil
+}
+
+func (r *userRepo) CreateUser(username string, tx *sql.Tx) (int, error) {
+	query := `INSERT INTO users (username) VALUES ($1) RETURNING id`
+	var lastInsertId int
+	err := tx.QueryRow(query, username).Scan(&lastInsertId)
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			if strings.Contains(pqErr.Message, "users_username_key") {
+				return 0, errors.New("username already exists")
+			}
+		}
+		log.Println("Failed to create user:", err)
+		return 0, err
+	}
+	fmt.Println("lastInsertId", lastInsertId)
+	return lastInsertId, nil
+}
+
+func (r *userRepo) GetUsersByID(userID int) (models.User, error) {
+	query := `select id,username,balance,created_at from users WHERE id = $1`
+
+	var user models.User
+	err := config.DB.Get(&user, query, userID)
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return models.User{}, errors.New("user not found")
+		}
+		log.Println("Failed to get balance:", err)
+		return models.User{}, err
+	}
+
+	return user, nil
 }

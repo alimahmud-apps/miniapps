@@ -6,6 +6,7 @@ services:
       - 127.0.0.1:5432:5432
     volumes:
       - ../volumes/postgresql:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: pgwallet
       POSTGRES_PASSWORD: password
