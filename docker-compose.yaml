@@ -3,10 +3,33 @@ services:
   postgres-ewallet:
     image: postgres:12-alpine
     ports:
-      - 127.0.0.1:5432:5432
+      - 5432:5432
     volumes:
       - ../volumes/postgresql:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: pgwallet
       POSTGRES_PASSWORD: password
+    networks:
+      - internal
+
+  service-ewallet:
+    build:
+      dockerfile: Dockerfile
+    container_name: service-ewallet
+    environment:
+      DB_HOST: postgres-ewallet
+      DB_PORT: '5432'
+      DB_USER: 'pgwallet'
+      DB_PASSWORD: 'password'
+    depends_on:
+      - postgres-ewallet
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
